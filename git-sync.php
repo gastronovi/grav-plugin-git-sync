@@ -47,10 +47,10 @@ class GitSyncPlugin extends Plugin
                 'onAdminMenu'          => ['onAdminMenu', 0],
                 'onAdminSave'          => ['onAdminSave', 0],
                 'onAdminAfterSave'     => ['onAdminAfterSave', 0],
-                'onAdminAfterSaveAs'   => ['synchronize', 0],
-                'onAdminAfterDelete'   => ['synchronize', 0],
-                'onAdminAfterAddMedia' => ['synchronize', 0],
-                'onAdminAfterDelMedia' => ['synchronize', 0],
+                'onAdminAfterSaveAs'   => ['commit', 0],
+                'onAdminAfterDelete'   => ['commit', 0],
+                'onAdminAfterAddMedia' => ['commit', 0],
+                'onAdminAfterDelMedia' => ['commit', 0],
             ]);
 
             return;
@@ -107,6 +107,18 @@ class GitSyncPlugin extends Plugin
         $this->git = $this->controller->git;
     }
 
+    public function commit()
+    {
+        if (!Helper::isGitInstalled() || !Helper::isGitInitialized()) {
+            return true;
+        }
+
+        if (!$this->git->isWorkingCopyClean()) {
+            // commit any change
+            $this->git->commit();
+        }
+    }
+
     public function synchronize()
     {
         if (!Helper::isGitInstalled() || !Helper::isGitInitialized()) {
@@ -115,10 +127,7 @@ class GitSyncPlugin extends Plugin
 
         $this->grav->fireEvent('onGitSyncBeforeSynchronize');
 
-        if (!$this->git->isWorkingCopyClean()) {
-            // commit any change
-            $this->git->commit();
-        }
+        $this->commit();
 
         // synchronize with remote
         $this->git->sync();
@@ -246,7 +255,7 @@ class GitSyncPlugin extends Plugin
             }
         }
 
-        $this->synchronize();
+        $this->commit();
 
         return true;
     }
